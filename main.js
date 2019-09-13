@@ -3,6 +3,8 @@ const BASE_URL = 'http://localhost:1337';
 const token = localStorage.getItem('token');
 const Authorization = { headers: { 'Authorization': "bearer " + token } };
 
+
+
 let data = new Array;
 let Employeedoc = new Array;
 let EmployeeIndex;
@@ -16,23 +18,28 @@ $(".dropdown-menu").on("click", "a", function (e) {
   display.val($this.data("id"));
 
 });
-
+const renderPage = _ => {
+  $("#userTable > tbody").empty()
+  $.each(data, (i, inv) => {
+    appendToUsrTable(i, inv);
+  });
+}
 $("#employee_form").on("click", "a", function (e) {
   e.preventDefault();
   const $this = $(this);
   const $text = $this.text();
-  const $id = $this.data("id");  
+  const $id = $this.data("id");
   const display = $(`#employee-${EmployeeIndex}`);
-  
+
   display.text($text);
   display.val($id);
-  Employeedoc = Employeedoc.filter(el=>el.id !== $id);
-  EmployeeIndex = EmployeeIndex -1 ;
+  Employeedoc = Employeedoc.filter(el => el.id !== $id);
+  EmployeeIndex = EmployeeIndex - 1;
   renderEmployee()
 });
 
 const renderEmployee = () => {
-  if(Employeedoc.length < 1) {
+  if (Employeedoc.length < 1) {
     return $('#employee_form > .row > ul').remove()
   };
   $('#employee_form > .row ').append(`
@@ -49,7 +56,21 @@ const renderEmployee = () => {
 
 }
 
+function updateUser(el) {
+  const Target = $(el).attr("data-id");
+  const Datums = $(`#form-${Target}`)['0']
+  let stateData = new Object;
 
+  for(let el of Datums){
+    stateData[el.name] = el.value
+  }
+    console.log(stateData)
+  axios.put(`${BASE_URL}/inventories/${Target}`, stateData, Authorization)
+      .then(
+        snap=>console.log(snap)
+      )
+
+}
 
 $("form").submit(async e => {
   e.preventDefault();
@@ -58,33 +79,35 @@ $("form").submit(async e => {
   let stateData = {
     inventory_number: invNo + 1
   }
-
+  
   let employeeDoc = new Array;
+
+  
 
   for (let i = 0; i < Target.length - 1; i++) {
     const currentValue = Target[i].value;
     const fixValue = isNaN(Target[i].value) ? Target[i].value : Number(currentValue);
 
-    if(Target[i].name.includes('employee')){      
-      if(Target[i].value)employeeDoc.push(Target[i].value)      
-    }else{
+    if (Target[i].name.includes('employee')) {
+      if (Target[i].value) employeeDoc.push(Target[i].value)
+    } else {
       stateData[Target[i].name] = fixValue;
     }
 
-    
+
   }
 
   stateData['employees'] = employeeDoc;
 
 
-  axios.post(BASE_URL+'/inventories',stateData,Authorization)    
-    .then(snap=>{
-        // console.log(snap)
-      // appendToUsrTable(snap.data)
-      // flashMessage(true,'Data berhasil ditambahkan')
-    })
-    // .catch(_=>flashMessage(false,'Gagal menambahkan data , cek kembali inputan anda'))
-    
+  // axios.post(BASE_URL + '/inventories', stateData, Authorization)
+  //   .then(snap => {
+  //     console.log(snap)
+  //     appendToUsrTable(snap.data)
+  //     flashMessage(true,'Data berhasil ditambahkan')
+  //   })
+  // .catch(_=>flashMessage(false,'Gagal menambahkan data , cek kembali inputan anda'))
+
 
 });
 
@@ -153,21 +176,17 @@ axios.get(BASE_URL + '/inventories', Authorization)
   })
 
 
-const renderPage = _ => {
-  $.each(data, (i, inv) => {
-    appendToUsrTable(i, inv);
-  });
-}
+
 
 
 
 
 function appendToUsrTable(i, snap) {
-  let invno = ''  
-  if(snap.inventorygroup.nomor) {invno += `${snap.inventorygroup.nomor}/`}else invno += '--/'
-  if(snap.branch) {invno += `${snap.branch.code}/`}else invno += '--/'
+  let invno = ''
+  if (snap.inventorygroup.nomor) { invno += `${snap.inventorygroup.nomor}/` } else invno += '--/'
+  if (snap.branch) { invno += `${snap.branch.code}/` } else invno += '--/'
   invno += snap.inventory_number
-        
+
   $("#userTable > tbody:last-child").append(`
           <tr>
               <td  name="inventory_number">${invno}</td>
@@ -187,16 +206,16 @@ function appendToUsrTable(i, snap) {
 
 
 
-function flashMessage(status,msg) {
+function flashMessage(status, msg) {
   $(".flashMsg").remove();
-  if(status){
+  if (status) {
     $("#head").prepend(`
           <div class="col-sm-12"><div class="flashMsg alert alert-success alert-dismissible fade in" role="alert"> <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true" class="glyphicon glyphicon-remove"></span></button> <strong>${msg}</strong></div></div>
       `);
-  }else{
+  } else {
     $("#head").prepend(`
           <div class="col-sm-12"><div class="flashMsg alert alert-danger alert-dismissible fade in" role="alert"> <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button> <strong>${msg}</strong></div></div>
-      `); 
+      `);
   }
 }
 
@@ -205,7 +224,7 @@ function editInventory(el) {
   const invID = el.id;
   const localdata = data.filter(jq => jq.id == invID)[0]
   $(".modal-body").empty().append(`
-  <form id="updateUser" action="">      
+  <form id="form-${invID}">      
       
       <label for="name">Name</label>
       <input class="form-control" type="text" name="name" value="${localdata.name}"/>
@@ -227,74 +246,13 @@ function editInventory(el) {
 `);
 
 
+
   $(".modal-footer").empty().append(`
                 <form>
-                    <button type="button" type="submit" class="btn btn-primary" onClick="updateUser()">Save changes</button>
+                    <button type="button" type="submit" class="btn btn-primary" onClick="updateUser(this)" data-id="${invID}">Save changes</button>
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </form>
             `);
 
 }
 
-
-
-
-// function updateUser(id) {
-//   let msg = "User updated successfully!";
-//   let user = {};
-//   user.id = id;
-//   data.forEach(function (user, i) {
-//     if (user.id == id) {
-//       $("#updateUser").children("input").each(function () {
-//         let value = $(this).val();
-//         let attr = $(this).attr("name");
-//         if (attr == "name") {
-//           user.name = value;
-//         } else if (attr == "address") {
-//           user.address = value;
-//         } else if (attr == "age") {
-//           user.age = value;
-//         }
-//       });
-//       data.splice(i, 1);
-//       data.splice(user.id - 1, 0, user);
-//       $("#userTable #user-" + user.id).children(".userData").each(function () {
-//         let attr = $(this).attr("name");
-//         if (attr == "name") {
-//           $(this).text(user.name);
-//         } else if (attr == "address") {
-//           $(this).text(user.address);
-//         } else {
-//           $(this).text(user.age);
-//         }
-//       });
-//       $(".modal").modal("toggle");
-//       flashMessage(msg);
-//     }
-//   });
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// function deleteUser(id) {
-//   let action = confirm("Are you sure you want to delete this user?");
-//   let msg = "User deleted successfully!";
-//   data.forEach(function (user, i) {
-//     if (user.id == id && action != false) {
-//       data.splice(i, 1);
-//       $("#userTable #user-" + user.id).remove();
-//       flashMessage(msg);
-//     }
-//   });
-// }

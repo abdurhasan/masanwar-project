@@ -1,0 +1,65 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="login.css">
+</head>
+
+<body class="align">
+
+    <div class="grid">
+
+        <form class="form login" id="submit-login">
+
+            <div class="form__field">
+                <label for="login__username"><svg class="icon">
+                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#user"></use>
+                    </svg><span class="hidden">Username</span></label>
+                <input id="login__username" type="text" name="identifier" class="form__input" placeholder="Username"
+                    required>
+            </div>
+
+            <div class="form__field">
+                <label for="login__password"><svg class="icon">
+                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#lock"></use>
+                    </svg><span class="hidden">Password</span></label>
+                <input id="login__password" type="password" name="password" class="form__input" placeholder="Password"
+                    required>
+            </div>
+
+            <div class="form__field">
+                <input type="submit" value="Sign In">
+            </div>
+
+        </form>
+
+
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js"></script>
+    
+    <script>            
+                
+        let stateData = new Object;
+        const BASE_URL = 'http://localhost:1337';
+        document.getElementById('submit-login').addEventListener('submit', e => {
+            e.preventDefault()
+            const Target = e.target
+
+            for (let i = 0; i < Target.length - 1; i++) {
+                stateData[Target[i].name] = Target[i].value
+            }
+
+            axios.post(BASE_URL + '/auth/local', stateData)
+                .then(snap => {                    
+                    localStorage.setItem('token', snap.data.jwt);
+                    localStorage.setItem('user', JSON.stringify(snap.data.user));
+                    document.location.href = 'dashboard.html';                                                             
+                })
+                .catch(err => console.log('Error', err))
+        })
+    </script>
+
+</body>
+
+</html>
